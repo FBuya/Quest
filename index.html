@@ -151,7 +151,17 @@
 
   </main>
 
-  <script src="preguntas.js"></script>
+  <script>
+    // Captura errores de carga/sintaxis de preguntas.js para mostrar un mensaje claro
+    window.__problemaPreguntas = null;
+    window.addEventListener("error", (e) => {
+      if (e.filename && e.filename.includes("preguntas.js")) {
+        window.__problemaPreguntas = `Error de escritura en preguntas.js, línea ${e.lineno}: ${e.message}`;
+      }
+    });
+  </script>
+  <script src="preguntas.js"
+          onerror="window.__problemaPreguntas = 'No se encontró el archivo preguntas.js. Tiene que estar en la misma carpeta que index.html y llamarse exactamente así (todo en minúscula, sin (1) ni .txt).'"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const LETRAS = ["a", "b", "c"];
@@ -163,8 +173,12 @@
     // ---------- Validación de preguntas.js ----------
     function validar() {
       const errores = [];
+      if (window.__problemaPreguntas) return [window.__problemaPreguntas];
       if (typeof PREGUNTAS === "undefined" || !Array.isArray(PREGUNTAS)) {
         return ["No se pudo leer preguntas.js (revisá comas, comillas y corchetes)."];
+      }
+      if (typeof CONFIG === "undefined") {
+        return ["Falta el bloque CONFIG al principio de preguntas.js."];
       }
       if (PREGUNTAS.length === 0) errores.push("No hay preguntas cargadas.");
       PREGUNTAS.forEach((p, i) => {
