@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1e1b4b">
+  <title>Trivia</title>
+  <style>
+    :root {
+      --bg: #1e1b4b;
+      --bg2: #312e81;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #6366f1;
+      --ok: #16a34a;
+      --ok-bg: #dcfce7;
+      --bad: #dc2626;
+      --bad-bg: #fee2e2;
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(160deg, var(--bg), var(--bg2));
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      min-height: 100dvh;
+    }
+    .card {
+      background: var(--card);
+      width: 100%;
+      max-width: 480px;
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.35);
+    }
+    .hidden { display: none !important; }
+
+    h1 { font-size: 1.8rem; text-align: center; margin-bottom: 8px; }
+    .sub { color: var(--muted); text-align: center; margin-bottom: 24px; line-height: 1.4; }
+    .info { text-align: center; color: var(--muted); font-size: .9rem; margin-bottom: 20px; }
+
+    .btn {
+      display: block;
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      transition: transform .08s, opacity .2s;
+    }
+    .btn:active { transform: scale(.98); }
+
+    /* Progreso */
+    .top { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); margin-bottom: 8px; }
+    .bar { height: 8px; background: #e5e7eb; border-radius: 99px; overflow: hidden; margin-bottom: 22px; }
+    .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+
+    .pregunta { font-size: 1.25rem; font-weight: 700; line-height: 1.35; margin-bottom: 20px; }
+
+    .opcion {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      text-align: left;
+      background: #f9fafb;
+      border: 2px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+      font-size: 1rem;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .opcion:not(:disabled):hover { border-color: var(--accent); }
+    .letra {
+      flex-shrink: 0;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: #e0e7ff;
+      color: var(--accent);
+      font-weight: 700;
+      display: grid; place-items: center;
+      text-transform: uppercase;
+    }
+    .opcion.ok  { border-color: var(--ok);  background: var(--ok-bg); }
+    .opcion.ok .letra  { background: var(--ok);  color: #fff; }
+    .opcion.bad { border-color: var(--bad); background: var(--bad-bg); }
+    .opcion.bad .letra { background: var(--bad); color: #fff; }
+    .opcion:disabled { cursor: default; }
+
+    .feedback { margin: 6px 0 16px; padding: 12px 14px; border-radius: 12px; line-height: 1.4; }
+    .feedback.ok  { background: var(--ok-bg);  color: #14532d; }
+    .feedback.bad { background: var(--bad-bg); color: #7f1d1d; }
+    .feedback small { display: block; margin-top: 6px; opacity: .85; }
+
+    /* Resultado */
+    .puntaje { font-size: 3.2rem; font-weight: 800; text-align: center; color: var(--accent); margin: 8px 0; }
+    .mensaje { text-align: center; font-size: 1.1rem; margin-bottom: 24px; }
+
+    .error { color: var(--bad); }
+    .error ul { margin: 12px 0 0 20px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <main class="card">
+
+    <!-- Pantalla de inicio -->
+    <section id="inicio">
+      <h1 id="titulo"></h1>
+      <p class="sub" id="subtitulo"></p>
+      <p class="info" id="cantidad"></p>
+      <button class="btn" id="btnEmpezar">Empezar</button>
+    </section>
+
+    <!-- Pantalla de pregunta -->
+    <section id="juego" class="hidden">
+      <div class="top">
+        <span id="numero"></span>
+        <span id="aciertos"></span>
+      </div>
+      <div class="bar"><div id="progreso"></div></div>
+      <p class="pregunta" id="textoPregunta"></p>
+      <div id="opciones"></div>
+      <div id="feedback" class="feedback hidden"></div>
+      <button class="btn hidden" id="btnSiguiente">Siguiente</button>
+    </section>
+
+    <!-- Pantalla final -->
+    <section id="final" class="hidden">
+      <h1>¡Terminaste!</h1>
+      <p class="puntaje" id="puntaje"></p>
+      <p class="mensaje" id="mensaje"></p>
+      <button class="btn" id="btnReiniciar">Jugar de nuevo</button>
+    </section>
+
+    <!-- Errores en preguntas.js -->
+    <section id="errores" class="hidden error"></section>
+
+  </main>
+
+  <script src="preguntas.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const LETRAS = ["a", "b", "c"];
+
+    let ronda = [];      // preguntas de esta partida
+    let actual = 0;
+    let puntos = 0;
+
+    // ---------- Validación de preguntas.js ----------
+    function validar() {
+      const errores = [];
+      if (typeof PREGUNTAS === "undefined" || !Array.isArray(PREGUNTAS)) {
+        return ["No se pudo leer preguntas.js (revisá comas, comillas y corchetes)."];
+      }
+      if (PREGUNTAS.length === 0) errores.push("No hay preguntas cargadas.");
+      PREGUNTAS.forEach((p, i) => {
+        const n = i + 1;
+        if (!p || typeof p.pregunta !== "string" || !p.pregunta.trim())
+          errores.push(`Pregunta ${n}: falta el texto de la pregunta.`);
+        if (!p || !p.opciones) {
+          errores.push(`Pregunta ${n}: faltan las opciones.`);
+        } else {
+          LETRAS.forEach((l) => {
+            if (typeof p.opciones[l] !== "string" || !p.opciones[l].trim())
+              errores.push(`Pregunta ${n}: falta la opción "${l}".`);
+          });
+        }
+        if (!p || !LETRAS.includes(String(p.correcta).toLowerCase()))
+          errores.push(`Pregunta ${n}: "correcta" tiene que ser "a", "b" o "c".`);
+      });
+      return errores;
+    }
+
+    function mezclar(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function mostrar(seccion) {
+      ["inicio", "juego", "final", "errores"].forEach((s) => $(s).classList.toggle("hidden", s !== seccion));
+    }
+
+    // ---------- Flujo del juego ----------
+    function empezar() {
+      // Normaliza cada pregunta a una lista de opciones con su "texto" y si es correcta
+      ronda = PREGUNTAS.map((p) => {
+        let ops = LETRAS.map((l) => ({ texto: p.opciones[l], correcta: l === String(p.correcta).toLowerCase() }));
+        if (CONFIG.mezclarOpciones) ops = mezclar(ops);
+        return { pregunta: p.pregunta, opciones: ops, explicacion: p.explicacion || "" };
+      });
+      if (CONFIG.mezclarPreguntas) ronda = mezclar(ronda);
+      actual = 0;
+      puntos = 0;
+      mostrar("juego");
+      pintarPregunta();
+    }
+
+    function pintarPregunta() {
+      const p = ronda[actual];
+      $("numero").textContent = `Pregunta ${actual + 1} de ${ronda.length}`;
+      $("aciertos").textContent = `Aciertos: ${puntos}`;
+      $("progreso").style.width = `${(actual / ronda.length) * 100}%`;
+      $("textoPregunta").textContent = p.pregunta;
+      $("feedback").className = "feedback hidden";
+      $("btnSiguiente").classList.add("hidden");
+
+      const cont = $("opciones");
+      cont.innerHTML = "";
+      p.opciones.forEach((op, i) => {
+        const b = document.createElement("button");
+        b.className = "opcion";
+        b.innerHTML = `<span class="letra">${LETRAS[i]}</span><span></span>`;
+        b.lastChild.textContent = op.texto;
+        b.addEventListener("click", () => responder(i));
+        cont.appendChild(b);
+      });
+    }
+
+    function responder(elegida) {
+      const p = ronda[actual];
+      const botones = [...$("opciones").children];
+      const acerto = p.opciones[elegida].correcta;
+      if (acerto) puntos++;
+
+      botones.forEach((b, i) => {
+        b.disabled = true;
+        if (i === elegida) b.classList.add(acerto ? "ok" : "bad");
+        if (!acerto && CONFIG.mostrarCorrecta && p.opciones[i].correcta) b.classList.add("ok");
+      });
+
+      const fb = $("feedback");
+      fb.className = `feedback ${acerto ? "ok" : "bad"}`;
+      fb.textContent = acerto ? "¡Correcto!" : "Incorrecto";
+      if (p.explicacion) {
+        const s = document.createElement("small");
+        s.textContent = p.explicacion;
+        fb.appendChild(s);
+      }
+
+      $("aciertos").textContent = `Aciertos: ${puntos}`;
+      $("progreso").style.width = `${((actual + 1) / ronda.length) * 100}%`;
+      const btn = $("btnSiguiente");
+      btn.textContent = actual + 1 < ronda.length ? "Siguiente" : "Ver resultado";
+      btn.classList.remove("hidden");
+    }
+
+    function siguiente() {
+      actual++;
+      if (actual < ronda.length) pintarPregunta();
+      else terminar();
+    }
+
+    function terminar() {
+      const total = ronda.length;
+      const pct = puntos / total;
+      $("puntaje").textContent = `${puntos} / ${total}`;
+      $("mensaje").textContent =
+        pct === 1 ? "¡Perfecto! Las acertaste todas 🏆" :
+        pct >= 0.7 ? "¡Muy bien! 👏" :
+        pct >= 0.4 ? "Nada mal, podés mejorar 💪" :
+                     "¡A seguir practicando! 📚";
+      mostrar("final");
+    }
+
+    // ---------- Arranque ----------
+    const errores = validar();
+    if (errores.length) {
+      $("errores").innerHTML = "<h1>Hay un problema en preguntas.js</h1><ul></ul>";
+      const ul = $("errores").querySelector("ul");
+      errores.forEach((e) => { const li = document.createElement("li"); li.textContent = e; ul.appendChild(li); });
+      mostrar("errores");
+    } else {
+      document.title = CONFIG.titulo;
+      $("titulo").textContent = CONFIG.titulo;
+      $("subtitulo").textContent = CONFIG.subtitulo;
+      $("cantidad").textContent = `${PREGUNTAS.length} preguntas`;
+      $("btnEmpezar").addEventListener("click", empezar);
+      $("btnSiguiente").addEventListener("click", siguiente);
+      $("btnReiniciar").addEventListener("click", empezar);
+    }
+  </script>
+</body>
+</html>
