@@ -66,6 +66,7 @@
     .bar { height: 8px; background: #e5e7eb; border-radius: 99px; overflow: hidden; margin-bottom: 22px; }
     .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
 
+    .nivel { display: inline-block; font-size: .75rem; font-weight: 700; letter-spacing: .04em; color: var(--accent); background: #e0e7ff; padding: 5px 10px; border-radius: 99px; margin-bottom: 12px; }
     .pregunta { font-size: 1.25rem; font-weight: 700; line-height: 1.35; margin-bottom: 20px; }
 
     .opcion {
@@ -132,6 +133,7 @@
         <span id="aciertos"></span>
       </div>
       <div class="bar"><div id="progreso"></div></div>
+      <span class="nivel hidden" id="nivel"></span>
       <p class="pregunta" id="textoPregunta"></p>
       <div id="opciones"></div>
       <div id="feedback" class="feedback hidden"></div>
@@ -218,7 +220,7 @@
       ronda = PREGUNTAS.map((p) => {
         let ops = LETRAS.map((l) => ({ texto: p.opciones[l], correcta: l === String(p.correcta).toLowerCase() }));
         if (CONFIG.mezclarOpciones) ops = mezclar(ops);
-        return { pregunta: p.pregunta, opciones: ops, explicacion: p.explicacion || "" };
+        return { nivel: p.nivel || "", pregunta: p.pregunta, opciones: ops, explicacion: p.explicacion || "" };
       });
       if (CONFIG.mezclarPreguntas) ronda = mezclar(ronda);
       actual = 0;
@@ -232,6 +234,8 @@
       $("numero").textContent = `Pregunta ${actual + 1} de ${ronda.length}`;
       $("aciertos").textContent = `Aciertos: ${puntos}`;
       $("progreso").style.width = `${(actual / ronda.length) * 100}%`;
+      $("nivel").textContent = p.nivel;
+      $("nivel").classList.toggle("hidden", !p.nivel);
       $("textoPregunta").textContent = p.pregunta;
       $("feedback").className = "feedback hidden";
       $("btnSiguiente").classList.add("hidden");
